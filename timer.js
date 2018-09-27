@@ -1,16 +1,11 @@
 module.exports = function timer() {
-    return new Promise((resolve, reject) => {
-        const interval = setInterval(() => {
-            const memory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100;
-            if(memory <= 30){
-                resolve (memory);
+    const memorySize = 30;
+       interval = setInterval(() => {
+        const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100;
+            if(usedMemory <= memorySize){
+                return console.log(usedMemory);
             }
-            else{
-                reject(new Error('Memory usage > 30 Mb'));
-            }
-        }, 300)
-    }).then ((memory) => {
-        console.log(`The script uses ${memory} Mb`);
-    })
+            return new Error(`Memory usage > ${memorySize} Mb`);
+    },300);
 };
 
