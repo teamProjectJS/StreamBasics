@@ -14,7 +14,7 @@ Thumbs.db
 /out-tsc
 
 # dependencies
-/node_modules
+node_modules
 package-lock.json
 
 # IDEs and editors
@@ -33,3 +33,5 @@ package-lock.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+books.csv

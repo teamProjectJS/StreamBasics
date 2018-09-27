@@ -1,11 +1,11 @@
-module.exports = function timer() {
-    const memorySize = 30;
-       interval = setInterval(() => {
+module.exports = function timer(limit, interval) {
+    
+      return setInterval(() => {
         const usedMemory = Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100;
-            if(usedMemory <= memorySize){
+            if(usedMemory <= limit){
                 return console.log(usedMemory);
             }
-            return new Error(`Memory usage > ${memorySize} Mb`);
-    },300);
+            throw new Error(`Memory usage > ${limit} Mb`);
+    },interval);
 };
 
