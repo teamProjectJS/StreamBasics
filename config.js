@@ -1,4 +1,4 @@
 module.exports = {
-    limit: 30,
-    interval: 300
+  limit: 30,
+  interval: 300,
 };
