@@ -10,22 +10,27 @@ module.exports = class Source extends Readable {
   }
 
   _read() {
-    // if (this.index === 1) {
-    //   this.push(`${this.headers.join()} \n`);
-    // }
     const i = this.index++;
     if (i > this.length) {
       this.push(null);
     } else {
-      // let line = '';
-      for (let j = 0; j < this.headers.length; j += 1) {
-        this.line += `${this.headers[j]} ${i}`;
-        if (j === this.headers.length -1) {
-          this.line += '\n';
-        } else {
-          this.line += ', ';
+      this.line = this.headers.reduce((acomulator, currentValue, currentIndex) => {
+        acomulator += `${currentValue} ${i}`;
+        if (currentIndex === this.headers.length - 1) {
+          acomulator += '\n';
+          return acomulator;
         }
-      }
+        acomulator += ',';
+        return acomulator;
+      }, this.line);
+      // for (let j = 0; j < this.headers.length; j += 1) {
+      //   this.line += `${this.headers[j]} ${i}`;
+      //   if (j === this.headers.length -1) {
+      //     this.line += '\n';
+      //   } else {
+      //     this.line += ', ';
+      //   }
+      // }
       this.push(this.line);
       this.line = '';
     }

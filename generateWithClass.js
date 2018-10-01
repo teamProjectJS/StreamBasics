@@ -33,17 +33,25 @@ function generateFile(obj) {
     write.on('error', error => reject(error));
   });
 }
-
-generateFile(books)
+Promise.all(
+  [generateFile(books), generateFile(authors)],
+)
   .then(() => console.log('finished'))
   .catch((err) => {
     console.error('ERR: ', err);
     process.exit(1);
   });
 
-generateFile(authors)
-  .then(() => console.log('finished'))
-  .catch((err) => {
-    console.error('ERR: ', err);
-    process.exit(1);
-  });
+// generateFile(books)
+//   .then(() => console.log('finished'))
+//   .catch((err) => {
+//     console.error('ERR: ', err);
+//     process.exit(1);
+//   });
+
+// generateFile(authors)
+//   .then(() => console.log('finished'))
+//   .catch((err) => {
+//     console.error('ERR: ', err);
+//     process.exit(1);
+//   });
