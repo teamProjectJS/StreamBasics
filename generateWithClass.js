@@ -16,11 +16,9 @@ const authors = {
   headers: ['id', 'firstName', 'lastName'],
 };
 
-function generateFile(obj) {
+function generateFile({ fileName, fileLenght, headers }) {
   return new Promise((resolve, reject) => {
-    const { fileName, fileLenght, headers } = obj;
     const write = fs.createWriteStream(fileName);
-
     const t = timer(limit, interval);
     const r = new Source(fileLenght, headers);
 
@@ -41,17 +39,3 @@ Promise.all(
     console.error('ERR: ', err);
     process.exit(1);
   });
-
-// generateFile(books)
-//   .then(() => console.log('finished'))
-//   .catch((err) => {
-//     console.error('ERR: ', err);
-//     process.exit(1);
-//   });
-
-// generateFile(authors)
-//   .then(() => console.log('finished'))
-//   .catch((err) => {
-//     console.error('ERR: ', err);
-//     process.exit(1);
-//   });

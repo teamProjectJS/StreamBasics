@@ -14,23 +14,11 @@ module.exports = class Source extends Readable {
     if (i > this.length) {
       this.push(null);
     } else {
-      this.line = this.headers.reduce((acomulator, currentValue, currentIndex) => {
-        acomulator += `${currentValue} ${i}`;
-        if (currentIndex === this.headers.length - 1) {
-          acomulator += '\n';
-          return acomulator;
-        }
-        acomulator += ',';
-        return acomulator;
+      this.line = this.headers.reduce((str, currentValue) => {
+        str += `${currentValue} ${i},`;
+        return str;
       }, this.line);
-      // for (let j = 0; j < this.headers.length; j += 1) {
-      //   this.line += `${this.headers[j]} ${i}`;
-      //   if (j === this.headers.length -1) {
-      //     this.line += '\n';
-      //   } else {
-      //     this.line += ', ';
-      //   }
-      // }
+      this.line = this.line.slice(0, this.line.length - 1).concat('\n');
       this.push(this.line);
       this.line = '';
     }
