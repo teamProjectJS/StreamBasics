@@ -1,24 +1,26 @@
 const fs = require('fs');
-const csv = require('csv');
+
 const timer = require('./timer');
-const { limit, interval: intervalValue } = require('./config');
+const { limit, interval } = require('./config');
+const writeInFile = require('./writeInFile');
 
-function generateBooks(lengthFile) {
+function generateFile(fileName, lengthFile, headers) {
   return new Promise((resolve, reject) => {
-    const interval = timer(limit, intervalValue);
-    const file = fs.createWriteStream('books.csv');
+    const write = fs.createWriteStream(fileName);
 
-    const generator = csv.generate({ columns: ['int', 'ascii'], length: lengthFile });
-    file.on('close', () => {
-      clearInterval(interval);
+    const t = timer(limit, interval);
+    writeInFile(write, lengthFile, headers);
+
+    write.on('close', () => {
+      clearInterval(t);
       return resolve();
     });
-    file.on('error', error => reject(error));
-    generator.pipe(file);
-    generator.on('error', error => reject(error));
+
+    write.on('error', error => reject(error));
   });
 }
-generateBooks(1e+6)
+
+generateFile('books.csv', 1e+6, ['id', 'title'])
   .then(() => console.log('finished'))
   .catch((err) => {
     console.error('ERR: ', err);
