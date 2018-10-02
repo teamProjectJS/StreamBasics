@@ -7,27 +7,27 @@ const { limit, interval } = require('./config');
 
 const books = {
   fileName: 'books.csv',
-  fileLenght: 1e+6,
+  fileLength: 1e+6,
   headers: ['id', 'title'],
 };
 const authors = {
   fileName: 'authors.csv',
-  fileLenght: 2e+6,
+  fileLength: 2e+6,
   headers: ['id', 'firstName', 'lastName'],
 };
 
 function generateFile(obj) {
   return new Promise((resolve, reject) => {
-    const { fileName, fileLenght, headers } = obj;
+    const { fileName, fileLength, headers } = obj;
     const write = fs.createWriteStream(fileName);
 
-    const t = timer(limit, interval);
-    const r = new Source(fileLenght, headers);
+    const timeInstance = timer(limit, interval);
+    const readableStream = new Source(fileLength, headers);
 
-    r.pipe(write);
+    readableStream.pipe(write);
     write.on('close', () => {
-      clearInterval(t);
-      return resolve();
+      clearInterval(timeInstance);
+      resolve();
     });
 
     write.on('error', error => reject(error));
@@ -41,17 +41,3 @@ Promise.all(
     console.error('ERR: ', err);
     process.exit(1);
   });
-
-// generateFile(books)
-//   .then(() => console.log('finished'))
-//   .catch((err) => {
-//     console.error('ERR: ', err);
-//     process.exit(1);
-//   });
-
-// generateFile(authors)
-//   .then(() => console.log('finished'))
-//   .catch((err) => {
-//     console.error('ERR: ', err);
-//     process.exit(1);
-//   });
