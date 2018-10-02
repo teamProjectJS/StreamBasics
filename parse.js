@@ -12,14 +12,14 @@ const authorsJson = 'authors.json';
 function parse(csvFile, jsonFile) {
   return new Promise((resolve, reject) => {
     const write = fs.createWriteStream(jsonFile);
-    const t = timer(limit, interval);
+    const timeInstance = timer(limit, interval);
 
     csv()
       .fromFile(csvFile)
       .pipe(write);
 
     write.on('close', () => {
-      clearInterval(t);
+      clearInterval(timeInstance);
       return resolve();
     });
 
@@ -27,14 +27,7 @@ function parse(csvFile, jsonFile) {
   });
 }
 
-parse(booksCsv, booksJson)
-  .then(() => console.log('finished'))
-  .catch((err) => {
-    console.error('ERR: ', err);
-    process.exit(1);
-  });
-
-parse(authorsCsv, authorsJson)
+Promise.all([parse(booksCsv, booksJson), parse(authorsCsv, authorsJson)])
   .then(() => console.log('finished'))
   .catch((err) => {
     console.error('ERR: ', err);
