@@ -72,7 +72,7 @@ function generateBooksToAuthors(books, authors, resultFile) {
 
     transformStream.on('data', (chunk) => {
       transformStream.pause();
-      authorsArray = chunk;
+      authorsArray = chunk.toString();
       process(readBooksStream, transformStream);
     });
 
