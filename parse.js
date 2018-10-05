@@ -12,12 +12,7 @@ const booksJson = 'books.json';
 const authorsJson = 'authors.json';
 const booksToAuthors = 'books-to-authors.json';
 
-const options = {
-  encoding: 'utf8',
-  readableObjectMode: true,
-  decodeStrings: true,
-};
-const transformStream = new Transform(options);
+const transformStream = new Transform();
 
 function parse(csvFile, jsonFile) {
   return new Promise((resolve, reject) => {
@@ -80,12 +75,6 @@ function generateBooksToAuthors(books, authors, resultFile) {
       authorsArray = chunk;
       process(readBooksStream, transformStream);
     });
-
-    // readAuthorsStream.on('data', (chunk) => {
-    //   readAuthorsStream.pause();
-    //   authorsArray.push(JSON.parse(chunk.toString()));
-    //   process(readBooksStream, readAuthorsStream);
-    // });
 
     writableStream
       .on('close', () => {
