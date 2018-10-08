@@ -3,7 +3,7 @@ const { Transform } = require('stream');
 module.exports = class MyTransform extends Transform {
   constructor(options) {
     super(options);
-    this.data = [];
+    this.authorsArray = [];
     this.authorsAmount = MyTransform.getRandomNumber(1, 3);
   }
 
@@ -12,14 +12,13 @@ module.exports = class MyTransform extends Transform {
   }
 
   _transform(data, encoding, done) {
-    if (this.data.length < this.authorsAmount) {
-      this.data.push(data.toString());
+    if (this.authorsArray.length < this.authorsAmount) {
+      this.authorsArray.push(data.toString());
       done();
     } else {
-      this.data.push(data.toString());
-      const res = `${this.data.join(',')}\n`;
+      const res = `${this.authorsArray.join(', ')}\n`;
 
-      this.data = [];
+      this.authorsArray = [];
       this.authorsAmount = MyTransform.getRandomNumber(1, 3);
 
       done(null, res);
