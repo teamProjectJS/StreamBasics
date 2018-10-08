@@ -4,7 +4,7 @@ module.exports = class MyTransform extends Transform {
   constructor(options) {
     super(options);
     this.authorsArray = [];
-    this.authorsAmount = MyTransform.getRandomNumber(1, 3);
+    this.authorsAmount = MyTransform.getRandomNumber(1, 4);
   }
 
   static getRandomNumber(min, max) {
@@ -19,7 +19,7 @@ module.exports = class MyTransform extends Transform {
       const res = `${this.authorsArray.join(', ')}\n`;
 
       this.authorsArray = [];
-      this.authorsAmount = MyTransform.getRandomNumber(1, 3);
+      this.authorsAmount = MyTransform.getRandomNumber(1, 4);
 
       done(null, res);
     }
