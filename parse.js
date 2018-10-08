@@ -1,6 +1,8 @@
 const csv = require('csvtojson');
 const fs = require('fs');
 
+const Transform = require('./TransformStream');
+
 const timer = require('./timer');
 const { limit, interval } = require('./config');
 
@@ -9,6 +11,8 @@ const authorsCsv = 'authors.csv';
 const booksJson = 'books.json';
 const authorsJson = 'authors.json';
 const booksToAuthors = 'books-to-authors.json';
+
+const transformStream = new Transform();
 
 function parse(csvFile, jsonFile) {
   return new Promise((resolve, reject) => {
@@ -47,8 +51,10 @@ function generateBooksToAuthors(books, authors, resultFile) {
 
     const readBooksStream = csv()
       .fromFile(books);
+
     const readAuthorsStream = csv()
-      .fromFile(authors);
+      .fromFile(authors)
+      .pipe(transformStream);
 
     readBooksStream.on('data', (chunk) => {
       readBooksStream.pause();
@@ -56,10 +62,18 @@ function generateBooksToAuthors(books, authors, resultFile) {
       process(readBooksStream, readAuthorsStream);
     });
 
-    readAuthorsStream.on('data', (chunk) => {
-      readAuthorsStream.pause();
-      authorsArray.push(JSON.parse(chunk.toString()));
-      process(readBooksStream, readAuthorsStream);
+    readBooksStream.on('end', () => {
+      writableStream.end();
+    });
+
+    transformStream.on('end', () => {
+      writableStream.end();
+    });
+
+    transformStream.on('data', (chunk) => {
+      transformStream.pause();
+      authorsArray = chunk.toString();
+      process(readBooksStream, transformStream);
     });
 
     writableStream
