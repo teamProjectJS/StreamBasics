@@ -12,7 +12,7 @@ const books = {
 };
 const authors = {
   fileName: 'authors.csv',
-  fileLength: 20,
+  fileLength: 12,
   headers: ['id', 'firstName', 'lastName'],
 };
 

@@ -12,7 +12,6 @@ const booksJson = 'books.json';
 const authorsJson = 'authors.json';
 const booksToAuthors = 'books-to-authors.json';
 
-const transformStream = new Transform();
 
 function parse(csvFile, jsonFile) {
   return new Promise((resolve, reject) => {
@@ -36,25 +35,35 @@ function generateBooksToAuthors(books, authors, resultFile) {
   return new Promise((resolve, reject) => {
     const timeInstance = timer(limit, interval);
     const writableStream = fs.createWriteStream(resultFile);
+    const transformStream = new Transform();
+    const transform2 = new Transform();
     let authorsArray = [];
-    let book;
+    let book = {};
+    let authorsStreamEnd = false;
+
+    const readBooksStream = csv()
+      .fromFile(books);
+
+    let readAuthorsStream = csv()
+      .fromFile(authors)
+      .pipe(transformStream);
 
     function process(booksStream, authorsStream) {
       if (booksStream.isPaused() && authorsStream.isPaused()) {
         Object.assign(book, { authors: authorsArray });
         writableStream.write(`${JSON.stringify(book)}\n`);
         authorsArray = [];
+        book = {};
         booksStream.resume();
         authorsStream.resume();
       }
+
+      if (Object.keys(book).length !== 0 && authorsStreamEnd) {
+        readAuthorsStream = csv()
+          .fromFile(authors)
+          .pipe(transform2);
+      }
     }
-
-    const readBooksStream = csv()
-      .fromFile(books);
-
-    const readAuthorsStream = csv()
-      .fromFile(authors)
-      .pipe(transformStream);
 
     readBooksStream.on('data', (chunk) => {
       readBooksStream.pause();
@@ -67,6 +76,11 @@ function generateBooksToAuthors(books, authors, resultFile) {
     });
 
     transformStream.on('end', () => {
+      authorsStreamEnd = true;
+      process(readBooksStream, transformStream);
+    });
+
+    transform2.on('end', () => {
       writableStream.end();
     });
 
@@ -75,6 +89,12 @@ function generateBooksToAuthors(books, authors, resultFile) {
       authorsArray = chunk.toString().split(', ');
       authorsArray = authorsArray.map(element => JSON.parse(element));
       process(readBooksStream, transformStream);
+    });
+    transform2.on('data', (chunk) => {
+      transform2.pause();
+      authorsArray = chunk.toString().split(', ');
+      authorsArray = authorsArray.map(element => JSON.parse(element));
+      process(readBooksStream, transform2);
     });
 
     writableStream

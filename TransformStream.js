@@ -12,8 +12,8 @@ module.exports = class MyTransform extends Transform {
   }
 
   _transform(data, encoding, done) {
+    this.authorsArray.push(data.toString());
     if (this.authorsArray.length < this.authorsAmount) {
-      this.authorsArray.push(data.toString());
       done();
     } else {
       const res = `${this.authorsArray.join(', ')}\n`;
