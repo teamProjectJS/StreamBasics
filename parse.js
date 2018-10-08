@@ -53,12 +53,12 @@ function generateBooksToAuthors(books, authors, resultFile) {
         Object.assign(book, { authors: authorsArray });
         writableStream.write(`${JSON.stringify(book)}\n`);
         authorsArray = [];
-        book = {};
+        book = undefined;
         booksStream.resume();
         authorsStream.resume();
       }
 
-      if (Object.keys(book).length !== 0 && authorsStreamEnd) {
+      if (book !== undefined && authorsStreamEnd) {
         readAuthorsStream = csv()
           .fromFile(authors)
           .pipe(transform2);
@@ -90,6 +90,7 @@ function generateBooksToAuthors(books, authors, resultFile) {
       authorsArray = authorsArray.map(element => JSON.parse(element));
       process(readBooksStream, transformStream);
     });
+
     transform2.on('data', (chunk) => {
       transform2.pause();
       authorsArray = chunk.toString().split(', ');

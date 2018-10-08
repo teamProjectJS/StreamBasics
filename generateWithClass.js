@@ -7,16 +7,12 @@ const { limit, interval } = require('./config');
 
 const books = {
   fileName: 'books.csv',
-  fileLength: 1e+6,
+  fileLength: 10,
   headers: ['id', 'title'],
 };
 const authors = {
   fileName: 'authors.csv',
-<<<<<<< HEAD
-  fileLength: 12,
-=======
-  fileLength: 2e+6,
->>>>>>> b3a477f1321fb9a1a9a8eebe58f87879ef769ecd
+  fileLength: 20,
   headers: ['id', 'firstName', 'lastName'],
 };
 
