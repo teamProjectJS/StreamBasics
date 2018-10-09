@@ -1,8 +1,6 @@
 const csv = require('csvtojson');
 const fs = require('fs');
-
 const Transform = require('./TransformStream');
-
 const timer = require('./timer');
 const { limit, interval } = require('./config');
 
@@ -12,6 +10,9 @@ const booksJson = 'books.json';
 const authorsJson = 'authors.json';
 const booksToAuthors = 'books-to-authors.json';
 
+const writableStream = fs.createWriteStream(booksToAuthors);
+let authors = [];
+let book = {};
 
 function parse(csvFile, jsonFile) {
   return new Promise((resolve, reject) => {
@@ -31,31 +32,27 @@ function parse(csvFile, jsonFile) {
   });
 }
 
-function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
+function process(booksStream, authorsStream) {
+  if (booksStream.isPaused() && authorsStream.isPaused()) {
+    writableStream.write(
+      `${JSON.stringify({ ...book, authors })}\n`,
+    );
+    book = undefined;
+    booksStream.resume();
+    authorsStream.resume();
+  }
+}
+
+function generateBooksToAuthors(booksFile, authorsFile) {
   return new Promise((resolve, reject) => {
     const timeInstance = timer(limit, interval);
-    const writableStream = fs.createWriteStream(resultFile);
     let transformStream = new Transform();
-    let authors = [];
-    let book = {};
     let booksStreamEnd = false;
-
     const readBooksStream = csv().fromFile(booksFile);
 
     let readAuthorsStream = csv()
       .fromFile(authorsFile)
       .pipe(transformStream);
-
-    function process(booksStream, authorsStream) {
-      if (booksStream.isPaused() && authorsStream.isPaused()) {
-        writableStream.write(
-          `${JSON.stringify({ ...book, authors })}\n`,
-        );
-        book = undefined;
-        booksStream.resume();
-        authorsStream.resume();
-      }
-    }
 
     readBooksStream.on('data', (chunk) => {
       readBooksStream.pause();
@@ -119,7 +116,7 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
 Promise.all([
   parse(booksCsv, booksJson),
   parse(authorsCsv, authorsJson),
-  generateBooksToAuthors(booksCsv, authorsCsv, booksToAuthors),
+  generateBooksToAuthors(booksCsv, authorsCsv),
 ])
   .then(() => console.log('finished'))
   .catch((err) => {
