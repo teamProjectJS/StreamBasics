@@ -117,7 +117,8 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
 }
 
 Promise.all([
-  parse(booksCsv, booksJson), parse(authorsCsv, authorsJson),
+  parse(booksCsv, booksJson),
+  parse(authorsCsv, authorsJson),
   generateBooksToAuthors(booksCsv, authorsCsv, booksToAuthors),
 ])
   .then(() => console.log('finished'))

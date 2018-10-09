@@ -6,21 +6,22 @@ module.exports = class Source extends Readable {
     this.length = length;
     this.headers = headers;
     this.index = 1;
-    this.line = `${this.headers.join()} \n`;
+    this.push(`${this.headers.join()} \n`);
   }
 
   _read() {
+    let line;
     const i = this.index++;
     if (i > this.length) {
       this.push(null);
     } else {
-      this.line = this.headers.reduce((str, currentValue) => {
+      line = this.headers.reduce((str, currentValue) => {
         str += `${currentValue} ${i},`;
         return str;
-      }, this.line);
-      this.line = this.line.slice(0, this.line.length - 1).concat('\n');
-      this.push(this.line);
-      this.line = '';
+      }, '');
+      line = `${line.slice(0, -1)}\n`;
+      this.push(line);
+      line = '';
     }
   }
 };
