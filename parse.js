@@ -31,39 +31,49 @@ function parse(csvFile, jsonFile) {
   });
 }
 
-function generateBooksToAuthors(books, authors, resultFile) {
+function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
   return new Promise((resolve, reject) => {
     const timeInstance = timer(limit, interval);
     const writableStream = fs.createWriteStream(resultFile);
-    const transformStream = new Transform();
-    const transform2 = new Transform();
-    let authorsArray = [];
+    let transformStream = new Transform();
+    let authors = [];
     let book = {};
     let authorsStreamEnd = false;
+    let booksStreamEnd = false;
 
-    const readBooksStream = csv()
-      .fromFile(books);
+    const readBooksStream = csv().fromFile(booksFile);
 
     let readAuthorsStream = csv()
-      .fromFile(authors)
+      .fromFile(authorsFile)
       .pipe(transformStream);
 
     function process(booksStream, authorsStream) {
       if (booksStream.isPaused() && authorsStream.isPaused()) {
-        Object.assign(book, { authors: authorsArray });
-        writableStream.write(`${JSON.stringify(book)}\n`);
-        authorsArray = [];
+        writableStream.write(
+          `${JSON.stringify({ ...book, authors })}\n`,
+        );
         book = undefined;
+        authors = undefined;
         booksStream.resume();
         authorsStream.resume();
       }
-
-      if (book !== undefined && authorsStreamEnd) {
-        readAuthorsStream = csv()
-          .fromFile(authors)
-          .pipe(transform2);
-      }
     }
+
+    // function checkStreamEnd() {
+    //   if (booksStreamEnd && authorsStreamEnd) {
+    //     writableStream.end();
+    //   }
+    //   if (!booksStreamEnd && authorsStreamEnd) {
+    //     transformStream = new Transform();
+    //     authorsStreamEnd = false;
+    //     readAuthorsStream = csv()
+    //       .fromFile(authorsFile)
+    //       .pipe(transformStream);
+    //   }
+    //   if (booksStreamEnd && authors !== undefined) {
+    //
+    //   }
+    // }
 
     readBooksStream.on('data', (chunk) => {
       readBooksStream.pause();
@@ -71,31 +81,47 @@ function generateBooksToAuthors(books, authors, resultFile) {
       process(readBooksStream, readAuthorsStream);
     });
 
-    readBooksStream.on('end', () => {
-      writableStream.end();
-    });
-
-    transformStream.on('end', () => {
-      authorsStreamEnd = true;
-      process(readBooksStream, transformStream);
-    });
-
-    transform2.on('end', () => {
-      writableStream.end();
-    });
-
     transformStream.on('data', (chunk) => {
       transformStream.pause();
-      authorsArray = chunk.toString().split(', ');
-      authorsArray = authorsArray.map(element => JSON.parse(element));
+      authors = chunk;
       process(readBooksStream, transformStream);
     });
 
-    transform2.on('data', (chunk) => {
-      transform2.pause();
-      authorsArray = chunk.toString().split(', ');
-      authorsArray = authorsArray.map(element => JSON.parse(element));
-      process(readBooksStream, transform2);
+    readAuthorsStream.on('error', (error) => {
+      clearInterval(timeInstance);
+      reject(error);
+    });
+
+    readBooksStream
+      .on('end', () => {
+        booksStreamEnd = true;
+          writableStream.end();
+      })
+      .on('error', (error) => {
+        clearInterval(timeInstance);
+        reject(error);
+      });
+
+    transformStream
+      .on('end', () => {
+        authorsStreamEnd = true;
+        if (!booksStreamEnd) {
+          transformStream = new Transform();
+          authorsStreamEnd = false;
+          readAuthorsStream = csv()
+            .fromFile(authorsFile)
+            .pipe(transformStream);
+        }
+        transformStream.on('data', (chunk) => {
+          transformStream.pause();
+          authors = chunk;
+          process(readBooksStream, transformStream);
+        });
+      });
+
+    transformStream.on('error', (error) => {
+      clearInterval(timeInstance);
+      reject(error);
     });
 
     writableStream
@@ -103,7 +129,10 @@ function generateBooksToAuthors(books, authors, resultFile) {
         clearInterval(timeInstance);
         resolve();
       })
-      .on('error', error => reject(error));
+      .on('error', (error) => {
+        clearInterval(timeInstance);
+        reject(error);
+      });
   });
 }
 

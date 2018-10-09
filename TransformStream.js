@@ -1,25 +1,33 @@
 const { Transform } = require('stream');
+const { maxAuthors } = require('./config');
 
 module.exports = class MyTransform extends Transform {
-  constructor(options) {
-    super(options);
+  constructor() {
+    super({ objectMode: true });
     this.authorsArray = [];
-    this.authorsAmount = MyTransform.getRandomNumber(1, 4);
+    this.setAuthorsAmount();
   }
 
-  static getRandomNumber(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
+  setAuthorsAmount() {
+    this.authorsAmount = Math.floor(Math.random() * (maxAuthors - 1)) + 1;
   }
 
   _transform(data, encoding, done) {
-    this.authorsArray.push(data.toString());
+    try {
+      const author = JSON.parse(data.toString());
+      this.authorsArray.push(author);
+    } catch (error) {
+      console.error(error);
+      done(error);
+      return;
+    }
+
     if (this.authorsArray.length < this.authorsAmount) {
       done();
     } else {
-      const res = `${this.authorsArray.join(', ')}\n`;
-
+      const res = [...this.authorsArray];
       this.authorsArray = [];
-      this.authorsAmount = MyTransform.getRandomNumber(1, 4);
+      this.setAuthorsAmount();
 
       done(null, res);
     }
