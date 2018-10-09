@@ -38,7 +38,6 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
     let transformStream = new Transform();
     let authors = [];
     let book = {};
-    let authorsStreamEnd = false;
     let booksStreamEnd = false;
 
     const readBooksStream = csv().fromFile(booksFile);
@@ -53,27 +52,10 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
           `${JSON.stringify({ ...book, authors })}\n`,
         );
         book = undefined;
-        authors = undefined;
         booksStream.resume();
         authorsStream.resume();
       }
     }
-
-    // function checkStreamEnd() {
-    //   if (booksStreamEnd && authorsStreamEnd) {
-    //     writableStream.end();
-    //   }
-    //   if (!booksStreamEnd && authorsStreamEnd) {
-    //     transformStream = new Transform();
-    //     authorsStreamEnd = false;
-    //     readAuthorsStream = csv()
-    //       .fromFile(authorsFile)
-    //       .pipe(transformStream);
-    //   }
-    //   if (booksStreamEnd && authors !== undefined) {
-    //
-    //   }
-    // }
 
     readBooksStream.on('data', (chunk) => {
       readBooksStream.pause();
@@ -95,7 +77,7 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
     readBooksStream
       .on('end', () => {
         booksStreamEnd = true;
-          writableStream.end();
+        writableStream.end();
       })
       .on('error', (error) => {
         clearInterval(timeInstance);
@@ -104,10 +86,8 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
 
     transformStream
       .on('end', () => {
-        authorsStreamEnd = true;
         if (!booksStreamEnd) {
           transformStream = new Transform();
-          authorsStreamEnd = false;
           readAuthorsStream = csv()
             .fromFile(authorsFile)
             .pipe(transformStream);
