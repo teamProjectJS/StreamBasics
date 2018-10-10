@@ -10,10 +10,6 @@ const booksJson = 'books.json';
 const authorsJson = 'authors.json';
 const booksToAuthors = 'books-to-authors.json';
 
-const writableStream = fs.createWriteStream(booksToAuthors);
-let authors = [];
-let book = {};
-
 function parse(csvFile, jsonFile) {
   return new Promise((resolve, reject) => {
     const write = fs.createWriteStream(jsonFile);
@@ -32,27 +28,31 @@ function parse(csvFile, jsonFile) {
   });
 }
 
-function process(booksStream, authorsStream) {
-  if (booksStream.isPaused() && authorsStream.isPaused()) {
-    writableStream.write(
-      `${JSON.stringify({ ...book, authors })}\n`,
-    );
-    book = undefined;
-    booksStream.resume();
-    authorsStream.resume();
-  }
-}
-
-function generateBooksToAuthors(booksFile, authorsFile) {
+function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
   return new Promise((resolve, reject) => {
     const timeInstance = timer(limit, interval);
+    const writableStream = fs.createWriteStream(resultFile);
     let transformStream = new Transform();
+    let authors = [];
+    let book = {};
     let booksStreamEnd = false;
+
     const readBooksStream = csv().fromFile(booksFile);
 
     let readAuthorsStream = csv()
       .fromFile(authorsFile)
       .pipe(transformStream);
+
+    function process(booksStream, authorsStream) {
+      if (booksStream.isPaused() && authorsStream.isPaused()) {
+        writableStream.write(
+          `${JSON.stringify({ ...book, authors })}\n`,
+        );
+        book = undefined;
+        booksStream.resume();
+        authorsStream.resume();
+      }
+    }
 
     readBooksStream.on('data', (chunk) => {
       readBooksStream.pause();
@@ -116,7 +116,7 @@ function generateBooksToAuthors(booksFile, authorsFile) {
 Promise.all([
   parse(booksCsv, booksJson),
   parse(authorsCsv, authorsJson),
-  generateBooksToAuthors(booksCsv, authorsCsv),
+  generateBooksToAuthors(booksCsv, authorsCsv, booksToAuthors),
 ])
   .then(() => console.log('finished'))
   .catch((err) => {
