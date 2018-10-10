@@ -10,10 +10,11 @@ const booksJson = 'books.json';
 const authorsJson = 'authors.json';
 const booksToAuthors = 'books-to-authors.json';
 
+const timeInstance = timer(limit, interval);
+
 function parse(csvFile, jsonFile) {
   return new Promise((resolve, reject) => {
     const write = fs.createWriteStream(jsonFile);
-    const timeInstance = timer(limit, interval);
 
     csv()
       .fromFile(csvFile)
@@ -21,7 +22,6 @@ function parse(csvFile, jsonFile) {
 
     write
       .on('close', () => {
-        clearInterval(timeInstance);
         resolve();
       })
       .on('error', error => reject(error));
@@ -30,28 +30,42 @@ function parse(csvFile, jsonFile) {
 
 function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
   return new Promise((resolve, reject) => {
-    const timeInstance = timer(limit, interval);
     const writableStream = fs.createWriteStream(resultFile);
     let authors = [];
     let book = {};
     let booksStreamEnd = false;
 
-    const readBooksStream = csv().fromFile(booksFile);
-   const readAuthorsStream = csv().fromFile(authorsFile).pipe(createAuthorsStream());
+    const readBooksStream = createBookStream();
+    const readAuthorsStream = createAuthorsStream();
+
+    function createBookStream() {
+      const BooksStream = csv().fromFile(booksFile);
+
+      BooksStream
+        .on('data', (chunk) => {
+          BooksStream.pause();
+          book = JSON.parse(chunk.toString());
+          process(BooksStream, readAuthorsStream);
+        })
+        .on('end', () => {
+          booksStreamEnd = true;
+          writableStream.end();
+        })
+        .on('error', error => reject(error));
+
+      return BooksStream;
+    }
 
     function createAuthorsStream() {
-      const transformStream = new Transform();
-      const readAuthorsStream = csv().fromFile(authorsFile).pipe(transformStream);
-      transformStream
+      const authorsStream = csv().fromFile(authorsFile).pipe(new Transform());
+
+      authorsStream
         .on('data', (chunk) => {
-          transformStream.pause();
+          authorsStream.pause();
           authors = chunk;
-          process(readBooksStream, transformStream);
+          process(readBooksStream, authorsStream);
         })
-        .on('error', (error) => {
-          clearInterval(timeInstance);
-          reject(error);
-        })
+        .on('error', error => reject(error))
         .on('end', () => {
           if (book === undefined && booksStreamEnd) {
             writableStream.end();
@@ -59,7 +73,8 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
             createAuthorsStream();
           }
         });
-      return transformStream;
+
+      return authorsStream;
     }
 
     function process(booksStream, authorsStream) {
@@ -73,30 +88,9 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
       }
     }
 
-    readBooksStream
-      .on('data', (chunk) => {
-        readBooksStream.pause();
-        book = JSON.parse(chunk.toString());
-        process(readBooksStream, readAuthorsStream);
-      })
-      .on('end', () => {
-        booksStreamEnd = true;
-        writableStream.end();
-      })
-      .on('error', (error) => {
-        clearInterval(timeInstance);
-        reject(error);
-      });
-
     writableStream
-      .on('close', () => {
-        clearInterval(timeInstance);
-        resolve();
-      })
-      .on('error', (error) => {
-        clearInterval(timeInstance);
-        reject(error);
-      });
+      .on('close', () => resolve())
+      .on('error', error => reject(error));
   });
 }
 
@@ -105,8 +99,12 @@ Promise.all([
   parse(authorsCsv, authorsJson),
   generateBooksToAuthors(booksCsv, authorsCsv, booksToAuthors),
 ])
-  .then(() => console.log('finished'))
+  .then(() => {
+    clearInterval(timeInstance);
+    console.log('finished');
+  })
   .catch((err) => {
     console.error('ERR: ', err);
+    clearInterval(timeInstance);
     process.exit(1);
   });
