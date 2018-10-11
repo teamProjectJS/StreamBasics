@@ -36,7 +36,7 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
     let booksStreamEnd = false;
 
     const readBooksStream = createBookStream();
-    const readAuthorsStream = createAuthorsStream();
+    let readAuthorsStream = createAuthorsStream();
 
     function createBookStream() {
       const BooksStream = csv().fromFile(booksFile);
@@ -67,10 +67,10 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
         })
         .on('error', error => reject(error))
         .on('end', () => {
-          if (book === undefined && booksStreamEnd) {
+          if (booksStreamEnd && book === undefined) {
             writableStream.end();
           } else {
-            createAuthorsStream();
+            readAuthorsStream = createAuthorsStream();
           }
         });
 
@@ -83,8 +83,8 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
           `${JSON.stringify({ ...book, authors })}\n`,
         );
         book = undefined;
-        booksStream.resume();
         authorsStream.resume();
+        booksStream.resume();
       }
     }
 
