@@ -49,7 +49,6 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
         })
         .on('end', () => {
           booksStreamEnd = true;
-          writableStream.end();
         })
         .on('error', error => reject(error));
 
@@ -67,7 +66,7 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
         })
         .on('error', error => reject(error))
         .on('end', () => {
-          if (booksStreamEnd && book === undefined) {
+          if (book === undefined) {
             writableStream.end();
           } else {
             readAuthorsStream = createAuthorsStream();
@@ -83,6 +82,9 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
           `${JSON.stringify({ ...book, authors })}\n`,
         );
         book = undefined;
+        if (booksStreamEnd) {
+          writableStream.end();
+        }
         authorsStream.resume();
         booksStream.resume();
       }
