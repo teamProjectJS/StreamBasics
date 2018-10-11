@@ -49,6 +49,9 @@ function generateBooksToAuthors(booksFile, authorsFile, resultFile) {
         })
         .on('end', () => {
           booksStreamEnd = true;
+          if (book === undefined) {
+            writableStream.end();
+          }
         })
         .on('error', error => reject(error));
 
